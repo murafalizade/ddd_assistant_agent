@@ -1,0 +1,20 @@
+"Start
+time","End
+time","End Depth
+mMD","Main - Sub Activity","State","Remark"
+"00:00","01:00","2202","interruption -- sidetrack","ok","FINISHED DRILLING TO 2202 M - TOTAL OF 19 M OF FORMATION DRILLED BEYOND WINDOW'S BOTTOM. PU & SO THROUGH WINDOW 5 TIMES - N
+O PROBLEMS."
+"01:00","02:30","2175","drilling -- circulating cond
+itioning","ok","PU ABOVE TOP OF WINDOW & PUMPED 5 M3 HI-VIS PILL. CIRCULATED HOLE CLEAN AT 2000 LPM AT 195 BAR. FLUSHED CHOKE & KILL LINES & B
+OOSTED RISER."
+"02:30","06:00","100","drilling -- trip","ok","POOH TO MU DRILLING BHA."
+"06:00","07:00","0","drilling -- trip","ok","FINISHED HANDLING WHIPSTOCK/MILLING BHA."
+"07:00","10:30","430","drilling -- trip","ok","MU DRILLING BHA & TIH TO 430 M WITH NEW 8 1/2"" PDC BIT."
+"10:30","11:30","430","drilling -- other","ok","S/C DRILLINE."
+"11:30","12:30","430","interruption -- maintain","fail","ELECTRICAL PROBLEM WITH TOP DRIVE SYSTEM; REPAIRED SAME."
+"12:30","16:30","2161","drilling -- trip","ok","CONTINUED TO TIH TO 2161 M."
+"16:30","17:00","2161","drilling -- trip","ok","ORIENTED TOOL-FACE."
+"17:00","17:30","2190","drilling -- trip","ok","RIH SLOWLY-NO ROTATION OR CIRCULATION-FROM 2161 - 2190 M. WINDOW IN CASING FROM 2178 - 2183 M. MADE CHECK TRIP TO 2175 M; NO P
+ROBLEMS PASSING THROUGH WINDOW."
+"17:30","18:00","2202","drilling -- trip","ok","BROKE CIRCULATION. WASHED DOWN FROM 2190 - 2202 M / TD."
+"18:00","00:00","2311","drilling -- drill","ok","DRILLED/ORIENTED 8 1/2"" HOLE FROM 2202 - 2311 M."
