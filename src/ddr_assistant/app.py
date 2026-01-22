@@ -55,20 +55,20 @@ def initialize_data():
     st.session_state.initialized = True
 
 with st.sidebar:
-    st.title("⚙️ Settings")
+    st.title("⚙Settings")
 
     if not os.environ.get("GROQ_API_KEY"):
-        st.error("⚠️ GROQ_API_KEY not found!")
+        st.error("⚠GROQ_API_KEY not found!")
     else:
-        st.success("✅ API Key loaded")
+        st.success("API Key loaded")
 
     st.divider()
-    st.markdown("### 📊 Database Status")
+    st.markdown("Database Status")
     # initialize_data()
     # st.rerun()
 
     st.divider()
-    st.markdown("### 📷 Image Analysis")
+    st.markdown("Image Analysis")
     uploaded_file = st.file_uploader("Choose an image", type=["png", "jpg", "jpeg"])
 
     if uploaded_file:
@@ -76,7 +76,7 @@ with st.sidebar:
         st.image(image, caption="Preview", use_container_width=True)
         st.session_state.pending_image = image
 
-        if st.button("🔍 Analyze Image", type="primary", use_container_width=True):
+        if st.button("Analyze Image", type="primary", use_container_width=True):
             with st.spinner("Analyzing..."):
                 analysis = agent.analyze_image(image)
                 agent.add_message("user", f"[Image: {uploaded_file.name}]", image)
@@ -85,22 +85,12 @@ with st.sidebar:
                 st.rerun()
 
     st.divider()
-    if st.button("Show Database Schema"):
-        schema_info = """
-**Available Tables:**
-1. **report_metadata**: report_id, operator, rig_name, wellbore_name, report_period, summary_activities, file_name, etc.
-2. **operations**: report_id, activity, state, remark
-3. **drilling_fluid**: report_id, parameter, value
-4. **gas_readings**: report_id, depth, gas components
-"""
-        agent.add_message("assistant", schema_info)
-        st.rerun()
 
-    if st.button("🗑️ Clear Chat History"):
+    if st.button("Clear Chat History"):
         agent.clear_history()
         st.rerun()
 
-st.title("💬 DDR Assistant Chat")
+st.title("DDR Assistant Chat")
 
 for message in agent.messages:
     with st.chat_message(message["role"]):

@@ -126,7 +126,6 @@ class PDFProcessor:
             page_width = pdf.pages[0].width
             page_height = pdf.pages[0].height
         
-        # Extract common tables (before first section)
         if sections and sections[0]['page'] == 1:
             first_section = sections[0]
             y1 = page_height
@@ -147,19 +146,16 @@ class PDFProcessor:
             except Exception:
                 pass
         
-        # Extract tables for each section
         for i, section in enumerate(sections):
             page_num = section['page']
             page_height = section['page_height']
             section_y_top = section['y_position']
             
-            # Find next section on same page or use page bottom
             if i + 1 < len(sections) and sections[i + 1]['page'] == page_num:
                 next_y = sections[i + 1]['y_position']
             else:
                 next_y = page_height
             
-            # Convert to PDF coordinates (from bottom-left)
             y1 = page_height - section_y_top - 20
             y2 = page_height - next_y + 10
             region = f'0,{y1},{page_width},{y2}'
@@ -263,7 +259,6 @@ class PDFProcessor:
             key = row.iloc[0]
             value = None
             
-            # Get first non-null value from remaining columns
             for i in range(1, len(row)):
                 if pd.notna(row.iloc[i]):
                     value = row.iloc[i]
@@ -304,22 +299,16 @@ class PDFProcessor:
         # Create a copy to avoid modifying original
         df_copy = df.copy()
         
-        # Check if the columns are generic integers (0, 1, 2...)
-        # This often happens with camelot lattice flavor
         is_generic_index = all(isinstance(c, int) for c in df_copy.columns) or \
                            all(str(c).isdigit() for c in df_copy.columns)
         
         if is_generic_index and len(df_copy) > 0:
-            # Check if the first row looks like a header
             first_row = df_copy.iloc[0].astype(str).tolist()
-            # If at least 2 cells in first row contain text (not just numbers)
             text_cells = [c for c in first_row if any(char.isalpha() for char in c)]
             if len(text_cells) >= 2:
-                # Use first row as header
                 df_copy.columns = first_row
                 df_copy = df_copy.iloc[1:].reset_index(drop=True)
         
-        # Normalize column names - handle both string and non-string types
         normalized_columns = []
         for col in df_copy.columns:
             col_str = str(col).lower()
@@ -354,16 +343,13 @@ class PDFProcessor:
         Returns:
             True if likely key-value, False otherwise
         """
-        # Key-value tables usually have few columns (2-3)
         if len(df.columns) > 4:
             return False
             
-        # Check if columns are "Unnamed" (indicates no header found by pandas)
         has_unnamed = any('unnamed' in str(col).lower() for col in df.columns)
         if has_unnamed:
             return True
             
-        # Check if first column looks like labels (mostly unique, short strings, etc.)
         first_col = df.iloc[:, 0].dropna()
         if len(first_col) > 0:
             # If high percentage of values end with colon
@@ -390,11 +376,8 @@ class PDFProcessor:
     @staticmethod
     def _normalize_section_name(text: str) -> str:
         """Normalize section name for use as dictionary key."""
-        # Remove content in parentheses
         name = re.sub(r'\([^)]*\)', '', text)
         name = name.lower().strip()
-        # Remove special characters
         name = re.sub(r'[^\w\s-]', '', name)
-        # Replace spaces/hyphens with underscores
         name = re.sub(r'[-\s]+', '_', name)
         return name

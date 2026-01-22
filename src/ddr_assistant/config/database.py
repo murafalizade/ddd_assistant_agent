@@ -92,14 +92,6 @@ def db_session(config: Optional[DatabaseConfig] = None) -> Generator[sqlite3.Con
     Args:
         config: Database configuration. If None, uses default configuration.
         
-    Yields:
-        SQLite connection object
-        
-    Example:
-        >>> with db_session() as conn:
-        ...     cursor = conn.cursor()
-        ...     cursor.execute("INSERT INTO users (name) VALUES (?)", ("John",))
-        ...     # Automatically commits on success, rolls back on exception
     """
     conn = get_db_connection(config)
     try:
@@ -113,23 +105,7 @@ def db_session(config: Optional[DatabaseConfig] = None) -> Generator[sqlite3.Con
 
 
 def init_database(config: Optional[DatabaseConfig] = None, schema_sql: Optional[str] = None) -> None:
-    """Initialize the database with optional schema.
-    
-    Args:
-        config: Database configuration. If None, uses default configuration.
-        schema_sql: SQL schema to execute. If None, only creates the database file.
-        
-    Example:
-        >>> schema = '''
-        ... CREATE TABLE IF NOT EXISTS users (
-        ...     id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ...     name TEXT NOT NULL,
-        ...     email TEXT UNIQUE NOT NULL,
-        ...     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ... );
-        ... '''
-        >>> init_database(schema_sql=schema)
-    """
+    """Initialize the database with optional schema."""
     if config is None:
         config = DatabaseConfig()
     
@@ -151,22 +127,7 @@ def execute_query(
     config: Optional[DatabaseConfig] = None,
     fetch: str = "all"
 ) -> list:
-    """Execute a SQL query and return results.
-    
-    Args:
-        query: SQL query to execute
-        params: Query parameters (for parameterized queries)
-        config: Database configuration
-        fetch: Fetch mode - "all", "one", or "none"
-        
-    Returns:
-        Query results as list of Row objects
-        
-    Example:
-        >>> results = execute_query("SELECT * FROM users WHERE age > ?", (18,))
-        >>> for row in results:
-        ...     print(dict(row))
-    """
+    """Execute a SQL query and return results."""
     with db_session(config) as conn:
         cursor = conn.cursor()
         
@@ -184,30 +145,3 @@ def execute_query(
         
         cursor.close()
         return results
-
-
-def execute_many(
-    query: str,
-    params_list: list[tuple],
-    config: Optional[DatabaseConfig] = None
-) -> int:
-    """Execute a SQL query multiple times with different parameters.
-    
-    Args:
-        query: SQL query to execute
-        params_list: List of parameter tuples
-        config: Database configuration
-        
-    Returns:
-        Number of rows affected
-        
-    Example:
-        >>> users = [("Alice", "alice@example.com"), ("Bob", "bob@example.com")]
-        >>> execute_many("INSERT INTO users (name, email) VALUES (?, ?)", users)
-    """
-    with db_session(config) as conn:
-        cursor = conn.cursor()
-        cursor.executemany(query, params_list)
-        rowcount = cursor.rowcount
-        cursor.close()
-        return rowcount

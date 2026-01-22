@@ -16,12 +16,9 @@ def query_drilling_db(query: str) -> str:
         conn = get_db_connection(config)
         df = pd.read_sql_query(query, conn)
         conn.close()
-        
-        # Debug print: results will appear in your terminal, not in the chat UI
-        print(df.values.tolist())
+        print(f"Query: {query}")
         if df.empty:
             return "Query executed successfully. No results found."
-        # Limit results for LLM context
         if len(df) > 10:
             return f"First 10 of {len(df)} results:\n" + df.head(10).to_markdown()
         return df.to_markdown()
@@ -52,7 +49,6 @@ def get_db_schema() -> str:
         conn = get_db_connection(config)
         cursor = conn.cursor()
         
-        # Get list of tables
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = [t[0] for t in cursor.fetchall() if t[0] != 'sqlite_sequence']
         
@@ -62,7 +58,6 @@ def get_db_schema() -> str:
             cursor.execute(f"PRAGMA table_info({table});")
             columns = cursor.fetchall()
             for col in columns:
-                # col[1] is name, col[2] is type, col[4] is default value, col[5] is pk
                 pk = " (Primary Key)" if col[5] else ""
                 schema_output += f"  - {col[1]} ({col[2]}){pk}\n"
         

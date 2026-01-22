@@ -1,5 +1,3 @@
-"""High-level processor for DDR reports - combines PDF extraction and database storage."""
-
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -54,16 +52,12 @@ class ReportProcessor:
             print(f"  Extracted {len(tables)} tables")
             print(f"  Extracted text from {len(text_data)} sections")
         
-        # Create report metadata
         metadata = self._create_metadata_from_tables(tables, text_data)
         metadata.file_name = pdf_path.name
         
-        # Parse wellbore and period from filename
-        # Pattern: WellboreName_YYYY_MM_DD.pdf
         stem = pdf_path.stem
         parts = stem.split('_')
         if len(parts) >= 4:
-            # Assume last 3 parts are YYYY_MM_DD
             wellbore_parts = parts[:-3]
             period_parts = parts[-3:]
             metadata.wellbore_name = "_".join(wellbore_parts)
@@ -73,13 +67,11 @@ class ReportProcessor:
             metadata.wellbore_name = stem
             metadata.report_period = "Unknown"
         
-        # Save metadata
         report_id = self.db_manager.save_report_metadata(metadata)
         
         if verbose:
             print(f"  Created report: {report_id}")
         
-        # Process and save operations
         if 'operations' in tables:
             operations = self._create_operations_from_table(
                 tables['operations'], report_id
@@ -88,7 +80,6 @@ class ReportProcessor:
             if verbose:
                 print(f"  Saved {count} operations")
         
-        # Process and save drilling fluid data
         if 'drilling_fluid' in tables:
             fluid_records = self._create_drilling_fluid_from_table(
                 tables['drilling_fluid'], report_id
@@ -97,7 +88,6 @@ class ReportProcessor:
             if verbose:
                 print(f"  Saved {count} drilling fluid records")
         
-        # Process and save gas readings
         if 'gas_reading_information' in tables:
             gas_readings = self._create_gas_readings_from_table(
                 tables['gas_reading_information'], report_id
@@ -129,7 +119,6 @@ class ReportProcessor:
         metadata = ReportMetadata()
         text_data = text_data or {}
         
-        # Combine all common tables and any other key-value looking tables
         all_data = {}
         
         processor = PDFProcessor.__new__(PDFProcessor)
@@ -138,7 +127,6 @@ class ReportProcessor:
                 data = processor.parse_key_value_table(df)
                 all_data.update(data)
         
-        # Map extracted data to metadata fields
         field_mapping = {
             'status': 'status',
             'report_creation_time': 'report_creation_time',
@@ -177,7 +165,6 @@ class ReportProcessor:
             if match_key:
                 value = all_data[match_key]
                 
-                # Numeric conversions
                 if model_field in [
                     'elevation_rkb_msl_m', 'water_depth_msl_m', 'dist_drilled_m',
                     'penetration_rate_m_h', 'hole_dia_in', 'formation_strength_g_cm3',
@@ -193,18 +180,15 @@ class ReportProcessor:
                 
                 setattr(metadata, model_field, value)
         
-        # Special handling for summaries from text data
         summary_sections = {
             'summary_of_activities': 'summary_activities',
             'summary_of_planned_activities': 'planned_activities',
         }
         
         for section_key, model_field in summary_sections.items():
-            # Check in text_data
             if section_key in text_data:
                 setattr(metadata, model_field, text_data[section_key])
             else:
-                # Fuzzy match in text_data keys
                 for k in text_data.keys():
                     if section_key in k:
                         setattr(metadata, model_field, text_data[k])
@@ -227,14 +211,12 @@ class ReportProcessor:
         """
         operations = []
         
-        # Use PDFProcessor's tabular parser to get normalized records
         processor = PDFProcessor.__new__(PDFProcessor)
         records = processor.parse_tabular_table(df)
         
         for record in records:
             op = OperationRecord(report_id=report_id)
             
-            # Map columns to fields - use fuzzy matching/normalization
             column_mapping = {
                 'start_time': 'start_time',
                 'end_time': 'end_time',
@@ -245,7 +227,6 @@ class ReportProcessor:
             }
             
             for col_key, field in column_mapping.items():
-                # Find matching key in record
                 match_key = None
                 for k in record.keys():
                     if col_key in k:
@@ -255,7 +236,6 @@ class ReportProcessor:
                 if match_key:
                     value = record[match_key]
                     
-                    # Convert numeric fields
                     if field == 'end_depth_mmd':
                         try:
                             if isinstance(value, str):
@@ -270,7 +250,6 @@ class ReportProcessor:
                     
                     setattr(op, field, value)
             
-            # Additional validation: skip if both start and end time are missing
             if op.start_time or op.end_time or op.remark:
                 operations.append(op)
         
@@ -290,7 +269,6 @@ class ReportProcessor:
         """
         records = []
         
-        # Drilling fluid tables often have parameter, value, unit
         for _, row in df.iterrows():
             if len(row) < 2:
                 continue

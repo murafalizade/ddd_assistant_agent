@@ -3,18 +3,14 @@ import multiprocessing
 from pathlib import Path
 from typing import Optional, Tuple
 
-# Base directory for relative paths
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 def process_single_file(pdf_path: Path):
     """Function to be run in a separate process to avoid hangs."""
     try:
-        # Lazy import to avoid circular dependencies and ensure src is in path
-        # These imports must be inside the function for multiprocessing safety
         from ddr_assistant.utils.report_processor import ReportProcessor
         
-        # ReportProcessor will create its own DatabaseManager with default config
-        processor = ReportProcessor() 
+        processor = ReportProcessor()
         
         processor.process_pdf_to_database(pdf_path, verbose=False)
         return True, None
@@ -42,15 +38,12 @@ class BatchProcessor:
             existing_reports = self.db_manager.get_all_reports()
             if len(existing_reports) == len(pdf_files):
                 return "success", "All pdfs are already added..."
-            # Assuming get_all_reports returns a list of objects or a DataFrame
-            # If it's a DataFrame, use .values, otherwise iterate
             if hasattr(existing_reports, 'empty') and not existing_reports.empty:
                 existing_reports_filenames = set(existing_reports['file_name'].values)
             elif isinstance(existing_reports, list):
                 existing_reports_filenames = set(r.file_name for r in existing_reports if hasattr(r, 'file_name'))
         except Exception as e:
             print(f"Note: Could not check existing reports: {e}")
-            # Continue without pre-checking if DB access fails
 
         processed_count = 0
         skipped_count = 0
@@ -72,8 +65,6 @@ class BatchProcessor:
                 if i % 10 == 0 or i < 5:
                     print(f"[{i+1}/{total_files}] Processing {pdf_path.name}...")
                 
-                # Use multiprocessing to handle hangs (Camelot can be slow/stuck)
-                # A pool of 1 process is used to isolate each task with a timeout
                 with multiprocessing.Pool(processes=1) as pool:
                     result = pool.apply_async(process_single_file, (pdf_path,))
                     try:
@@ -93,7 +84,6 @@ class BatchProcessor:
         return "success", f"✅ Batch complete! Processed: {processed_count}, Skipped: {skipped_count}"
 
 if __name__ == "__main__":
-    # Add src to sys.path if running directly
     src_path = str(ROOT_DIR / "src")
     if src_path not in sys.path:
         sys.path.insert(0, src_path)

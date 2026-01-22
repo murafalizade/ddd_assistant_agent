@@ -49,3 +49,24 @@ You can search for the following topics to improve system:
 - After a DDR is uploaded, it is automatically processed and stored in a central database together with all previous DDRs.  
 - A chat interface allows users to ask questions and receive explanations of plots and images.  
 - The application provides visualization of trends and detected anomalies across all stored reports.
+
+## 8. Monitoring & Safety
+### LangSmith Integration
+The system is integrated with **LangSmith** for comprehensive tracking of:
+- **Prompt Efficiency**: Monitor token usage and response times.
+- **Tool Usage**: Track when and how tools like `query_drilling_db` are called.
+- **Debugging**: Full trace of LLM reasoning chains.
+
+To enable LangSmith, add the following to your `.env` file:
+```env
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
+LANGCHAIN_API_KEY="your-api-key"
+LANGCHAIN_PROJECT="ddr-assistant"
+```
+
+### Prompt Guardrails
+A safety layer has been implemented to protect the system:
+- **Input Validation**: Detects and blocks prompt injection attempts and malicious patterns.
+- **Output Validation**: Monitors responses for sensitive information (PII) and ensures compliance with safety guidelines.
+- **PII Masking**: Capability to redact sensitive data like emails and phone numbers.
