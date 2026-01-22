@@ -2,15 +2,15 @@ import sqlite3
 import pandas as pd
 from typing import Optional
 from langchain_core.tools import tool
+from pydantic import BaseModel, Field
 from ddr_assistant.config import DatabaseConfig, get_db_connection
 
-@tool
+class SQLQuery(BaseModel):
+    query: str = Field(description="A valid SQLite SELECT query")
+
+@tool(args_schema=SQLQuery)
 def query_drilling_db(query: str) -> str:
-    """
-    Execute a SQL query against the drilling reports database.
-    Use this to retrieve data from tables: report_metadata, operations, drilling_fluid, and gas_readings.
-    Input should be a valid SQLite query.
-    """
+    """Execute a SQL SELECT query against the drilling reports database."""
     try:
         config = DatabaseConfig()
         conn = get_db_connection(config)
@@ -23,13 +23,13 @@ def query_drilling_db(query: str) -> str:
             return f"First 10 of {len(df)} results:\n" + df.head(10).to_markdown()
         return df.to_markdown()
     except Exception as e:
-        return f"Error executing query: {str(e)}"
+        return f"Error executing query: {str(e)} {query}"
 
 @tool
 def list_tables() -> str:
     """
-    List all available tables in the drilling database with a brief description of their purpose.
-    Use this first to decide which table likely contains the information you need.
+    List available tables in the drilling database. 
+    Use this if you need to know what types of data are available (e.g., fluid, gas, operations).
     """
     return """
 1. **report_metadata**: Core metadata for each daily report. Contains high-level info like rig name, operator, date (report_period), well depth, and overall summaries.
@@ -41,8 +41,8 @@ def list_tables() -> str:
 @tool
 def get_db_schema() -> str:
     """
-    Get the dynamic FULL schema of the drilling database directly from the SQL engine.
-    Use this to see the current tables and exact column names for your SQL queries.
+    Get the exact column names for tables in the drilling database.
+    Use this before writing SQL queries to ensure you use the correct column names.
     """
     try:
         config = DatabaseConfig()

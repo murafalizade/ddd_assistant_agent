@@ -55,10 +55,10 @@ def initialize_data():
     st.session_state.initialized = True
 
 with st.sidebar:
-    st.title("⚙Settings")
+    st.title("Settings")
 
     if not os.environ.get("GROQ_API_KEY"):
-        st.error("⚠GROQ_API_KEY not found!")
+        st.error("GROQ_API_KEY not found!")
     else:
         st.success("API Key loaded")
 
@@ -80,7 +80,7 @@ with st.sidebar:
             with st.spinner("Analyzing..."):
                 analysis = agent.analyze_image(image)
                 agent.add_message("user", f"[Image: {uploaded_file.name}]", image)
-                agent.add_message("assistant", f"**📸 Analysis:**\n\n{analysis}")
+                agent.add_message("assistant", f"**Analysis:**\n\n{analysis}")
                 st.session_state.pending_image = None
                 st.rerun()
 
@@ -107,10 +107,10 @@ if prompt := st.chat_input("Ask a question..."):
         with st.chat_message("assistant"):
             with st.spinner("Analyzing..."):
                 analysis = agent.analyze_image(st.session_state.pending_image, prompt)
-                st.markdown(f"**📸 Analysis:**\n\n{analysis}")
+                st.markdown(f"**Analysis:**\n\n{analysis}")
 
         agent.add_message("user", prompt, st.session_state.pending_image)
-        agent.add_message("assistant", f"**📸 Analysis:**\n\n{analysis}")
+        agent.add_message("assistant", f"**Analysis:**\n\n{analysis}")
         st.session_state.pending_image = None
         st.rerun()
     else:

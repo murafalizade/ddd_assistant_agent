@@ -74,15 +74,8 @@ class LlamaAgent:
         self.add_message("user", user_message)
         
         try:
-            formatted_history = []
-            for m in self.messages[:-1]:
-                if "image" not in m:
-                    if m["role"] == "user":
-                        formatted_history.append(HumanMessage(content=m["content"]))
-                    elif m["role"] == "assistant":
-                        formatted_history.append(AIMessage(content=m["content"]))
 
-            active_messages = [SystemMessage(content=SYSTEM_PROMPT)] + formatted_history + [HumanMessage(content=user_message)]
+            active_messages = [SystemMessage(content=SYSTEM_PROMPT)] + [HumanMessage(content=user_message)]
 
             for _ in range(5):
                 response = self.llm_with_tools.invoke(active_messages)
