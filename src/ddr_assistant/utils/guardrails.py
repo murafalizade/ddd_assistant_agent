@@ -5,10 +5,6 @@ from typing import List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 class GuardrailManager:
-    """
-    Manages input and output guardrails for the assistant.
-    """
-    
     def __init__(self):
         self.injection_patterns = [
             r"ignore all previous instructions",
@@ -26,10 +22,6 @@ class GuardrailManager:
         }
 
     def validate_input(self, text: str) -> Tuple[bool, str]:
-        """
-        Validates user input against safety rules.
-        Returns (is_safe, message).
-        """
         for pattern in self.injection_patterns:
             if re.search(pattern, text, re.IGNORECASE):
                 logger.warning(f"Potential prompt injection detected: {pattern}")
@@ -41,10 +33,6 @@ class GuardrailManager:
         return True, text
 
     def validate_output(self, text: str) -> Tuple[bool, str]:
-        """
-        Validates assistant output against safety rules.
-        Returns (is_safe, message).
-        """
         for pii_type, pattern in self.pii_patterns.items():
             if re.search(pattern, text):
                 logger.warning(f"Potential {pii_type} detected in output.")
@@ -52,9 +40,6 @@ class GuardrailManager:
         return True, text
 
     def mask_pii(self, text: str) -> str:
-        """
-        Masks PII in the text.
-        """
         for pii_type, pattern in self.pii_patterns.items():
             text = re.sub(pattern, f"[{pii_type.upper()}_REDACTED]", text)
         return text

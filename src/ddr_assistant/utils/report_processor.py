@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Dict, List, Optional, Union
-
 import pandas as pd
 import re
 from ddr_assistant.config import DatabaseConfig
@@ -13,16 +12,8 @@ from ddr_assistant.utils.models import (
 )
 from ddr_assistant.utils.pdf_processor import PDFProcessor
 
-
 class ReportProcessor:
-    """High-level processor for DDR reports."""
-    
     def __init__(self, db_config: Optional[DatabaseConfig] = None):
-        """Initialize report processor.
-        
-        Args:
-            db_config: Database configuration. If None, uses default.
-        """
         self.db_manager = DatabaseManager(db_config)
     
     def process_pdf_to_database(
@@ -30,20 +21,10 @@ class ReportProcessor:
         pdf_path: Union[str, Path],
         verbose: bool = True
     ) -> str:
-        """Process a PDF report and save all data to database.
-        
-        Args:
-            pdf_path: Path to PDF file
-            verbose: Whether to print progress information
-            
-        Returns:
-            The report_id of the processed report
-        """
         pdf_path = Path(pdf_path)
         if verbose:
             print(f"Processing PDF: {pdf_path}")
         
-        # Extract data from PDF
         processor = PDFProcessor(pdf_path)
         tables, sections, text_data = processor.extract_all_data()
         
@@ -63,7 +44,6 @@ class ReportProcessor:
             metadata.wellbore_name = "_".join(wellbore_parts)
             metadata.report_period = "-".join(period_parts)
         else:
-            # Handle cases where underscore split isn't clean
             metadata.wellbore_name = stem
             metadata.report_period = "Unknown"
         
@@ -101,24 +81,13 @@ class ReportProcessor:
         
         return report_id
     
-    
     def _create_metadata_from_tables(
         self, 
         tables: Dict[str, pd.DataFrame],
         text_data: Optional[Dict[str, str]] = None
     ) -> ReportMetadata:
-        """Create ReportMetadata from extracted tables and text.
-        
-        Args:
-            tables: Dictionary of extracted tables
-            text_data: Dictionary of extracted text sections
-            
-        Returns:
-            ReportMetadata instance
-        """
         metadata = ReportMetadata()
         text_data = text_data or {}
-        
         all_data = {}
         
         processor = PDFProcessor.__new__(PDFProcessor)
@@ -164,7 +133,6 @@ class ReportProcessor:
             
             if match_key:
                 value = all_data[match_key]
-                
                 if model_field in [
                     'elevation_rkb_msl_m', 'water_depth_msl_m', 'dist_drilled_m',
                     'penetration_rate_m_h', 'hole_dia_in', 'formation_strength_g_cm3',
@@ -194,29 +162,17 @@ class ReportProcessor:
                         setattr(metadata, model_field, text_data[k])
                         break
         
-        
         return metadata
     
     def _create_operations_from_table(
         self, df: pd.DataFrame, report_id: str
     ) -> List[OperationRecord]:
-        """Create OperationRecord instances from operations table.
-        
-        Args:
-            df: Operations DataFrame
-            report_id: Report ID
-            
-        Returns:
-            List of OperationRecord instances
-        """
         operations = []
-        
         processor = PDFProcessor.__new__(PDFProcessor)
         records = processor.parse_tabular_table(df)
         
         for record in records:
             op = OperationRecord(report_id=report_id)
-            
             column_mapping = {
                 'start_time': 'start_time',
                 'end_time': 'end_time',
@@ -235,7 +191,6 @@ class ReportProcessor:
                 
                 if match_key:
                     value = record[match_key]
-                    
                     if field == 'end_depth_mmd':
                         try:
                             if isinstance(value, str):
@@ -247,7 +202,6 @@ class ReportProcessor:
                                 value = None
                         except (ValueError, TypeError, AttributeError):
                             value = None
-                    
                     setattr(op, field, value)
             
             if op.start_time or op.end_time or op.remark:
@@ -258,26 +212,13 @@ class ReportProcessor:
     def _create_drilling_fluid_from_table(
         self, df: pd.DataFrame, report_id: str
     ) -> List[DrillingFluidRecord]:
-        """Create DrillingFluidRecord instances from drilling fluid table.
-        
-        Args:
-            df: Drilling fluid DataFrame
-            report_id: Report ID
-            
-        Returns:
-            List of DrillingFluidRecord instances
-        """
         records = []
-        
         for _, row in df.iterrows():
             if len(row) < 2:
                 continue
-                
-            # If the first column is a parameter name
             param_name = str(row.iloc[0]) if pd.notna(row.iloc[0]) else None
             if not param_name or len(param_name) < 2:
                 continue
-                
             record = DrillingFluidRecord(
                 report_id=report_id,
                 parameter_name=param_name,
@@ -285,31 +226,16 @@ class ReportProcessor:
                 unit=str(row.iloc[2]) if len(row) > 2 and pd.notna(row.iloc[2]) else None,
             )
             records.append(record)
-        
         return records
     
     def _create_gas_readings_from_table(
         self, df: pd.DataFrame, report_id: str
     ) -> List[GasReadingRecord]:
-        """Create GasReadingRecord instances from gas readings table.
-        
-        Args:
-            df: Gas readings DataFrame
-            report_id: Report ID
-            
-        Returns:
-            List of GasReadingRecord instances
-        """
         records = []
-        
-        # Use PDFProcessor's tabular parser
         processor = PDFProcessor.__new__(PDFProcessor)
         rows = processor.parse_tabular_table(df)
-        
         for row in rows:
             record = GasReadingRecord(report_id=report_id)
-            
-            # Map columns to fields
             column_mapping = {
                 'depth_m': 'depth_m',
                 'c1': 'c1',
@@ -324,10 +250,8 @@ class ReportProcessor:
                 'background_gas': 'background_gas',
                 'connection_gas': 'connection_gas',
             }
-            
             any_value = False
             for col_key, field in column_mapping.items():
-                # Find matching key
                 match_key = None
                 for k in row.keys():
                     if col_key in k:
@@ -344,32 +268,19 @@ class ReportProcessor:
                             value = float(value)
                         else:
                             value = None
-                            
                         if value is not None:
                             any_value = True
                     except (ValueError, TypeError, AttributeError):
                         value = None
                     setattr(record, field, value)
-            
             if any_value:
                 records.append(record)
-        
         return records
     
     def get_report_summary(self, report_id: str) -> Dict:
-        """Get a complete summary of a report.
-        
-        Args:
-            report_id: Report ID
-            
-        Returns:
-            Dictionary with all report data
-        """
         metadata = self.db_manager.get_report_by_id(report_id)
-        
         if metadata is None:
             return None
-        
         return {
             'metadata': metadata,
             'operations': self.db_manager.get_operations_by_report(report_id).to_dict('records'),

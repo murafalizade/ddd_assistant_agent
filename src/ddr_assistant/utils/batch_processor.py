@@ -1,12 +1,11 @@
 import sys
 import multiprocessing
 from pathlib import Path
-from typing import Optional, Tuple
+
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 def process_single_file(pdf_path: Path):
-    """Function to be run in a separate process to avoid hangs."""
     try:
         from ddr_assistant.utils.report_processor import ReportProcessor
         
@@ -23,7 +22,6 @@ class BatchProcessor:
         self.db_manager = db_manager
 
     def initialize_data(self, progress_callback=None, timeout_seconds=60):
-        """Convert all PDFs to SQL with safety timeouts."""
         if not self.data_dir.exists():
             print(f"Error: Data directory {self.data_dir} not found.")
             return "error", f"Data directory {self.data_dir} not found."
@@ -36,6 +34,7 @@ class BatchProcessor:
         existing_reports_filenames = set()
         try:
             existing_reports = self.db_manager.get_all_reports()
+            print(f"Found {len(existing_reports)} existing reports.")
             if len(existing_reports) == len(pdf_files):
                 return "success", "All pdfs are already added..."
             if hasattr(existing_reports, 'empty') and not existing_reports.empty:
@@ -55,7 +54,6 @@ class BatchProcessor:
             if progress_callback:
                 progress_callback(i, total_files, pdf_path.name)
             
-            # Skip if already in DB (check by filename)
             if pdf_path.name in existing_reports_filenames:
                 print(f"  ~ Skipping {pdf_path.name}: Already in database.")
                 skipped_count += 1

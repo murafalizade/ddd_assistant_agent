@@ -1,11 +1,7 @@
-"""Database manager for storing DDR report data."""
-
 import sqlite3
 from pathlib import Path
 from typing import Dict, List, Optional
-
 import pandas as pd
-
 from ddr_assistant.config import DatabaseConfig, get_db_connection
 from ddr_assistant.utils.models import (
     DrillingFluidRecord,
@@ -14,13 +10,8 @@ from ddr_assistant.utils.models import (
     ReportMetadata,
 )
 
-
 class DatabaseManager:
-    """Manage database operations for DDR reports."""
-    
-    # Database schema
     SCHEMA = """
-    -- Report metadata table
     CREATE TABLE IF NOT EXISTS report_metadata (
         report_id TEXT PRIMARY KEY,
         status TEXT,
@@ -54,7 +45,6 @@ class DatabaseManager:
         updated_at TEXT
     );
     
-    -- Operations table
     CREATE TABLE IF NOT EXISTS operations (
         operation_id TEXT PRIMARY KEY,
         report_id TEXT NOT NULL,
@@ -68,7 +58,6 @@ class DatabaseManager:
         FOREIGN KEY (report_id) REFERENCES report_metadata(report_id) ON DELETE CASCADE
     );
     
-    -- Drilling fluid table
     CREATE TABLE IF NOT EXISTS drilling_fluid (
         fluid_record_id TEXT PRIMARY KEY,
         report_id TEXT NOT NULL,
@@ -79,7 +68,6 @@ class DatabaseManager:
         FOREIGN KEY (report_id) REFERENCES report_metadata(report_id) ON DELETE CASCADE
     );
     
-    -- Gas readings table
     CREATE TABLE IF NOT EXISTS gas_readings (
         gas_reading_id TEXT PRIMARY KEY,
         report_id TEXT NOT NULL,
@@ -99,7 +87,6 @@ class DatabaseManager:
         FOREIGN KEY (report_id) REFERENCES report_metadata(report_id) ON DELETE CASCADE
     );
     
-    -- Create indexes
     CREATE INDEX IF NOT EXISTS idx_operations_report_id ON operations(report_id);
     CREATE INDEX IF NOT EXISTS idx_drilling_fluid_report_id ON drilling_fluid(report_id);
     CREATE INDEX IF NOT EXISTS idx_gas_readings_report_id ON gas_readings(report_id);
@@ -108,21 +95,14 @@ class DatabaseManager:
     """
     
     def __init__(self, config: Optional[DatabaseConfig] = None):
-        """Initialize database manager.
-        
-        Args:
-            config: Database configuration. If None, uses default.
-        """
         self.config = config or DatabaseConfig()
         self._init_database()
     
     def _init_database(self):
-        """Initialize database with schema and handle migrations."""
         conn = get_db_connection(self.config)
         cursor = conn.cursor()
         cursor.executescript(self.SCHEMA)
         
-        # Simple migration: add missing columns to report_metadata
         cursor.execute("PRAGMA table_info(report_metadata)")
         existing_cols = [col[1] for col in cursor.fetchall()]
         
@@ -146,277 +126,93 @@ class DatabaseManager:
         conn.close()
     
     def save_report_metadata(self, metadata: ReportMetadata) -> str:
-        """Save report metadata to database.
-        
-        Args:
-            metadata: ReportMetadata instance
-            
-        Returns:
-            The report_id
-        """
         df = pd.DataFrame([metadata.to_dict()])
-        
         conn = get_db_connection(self.config)
-        df.to_sql(
-            'report_metadata',
-            conn,
-            if_exists='append',
-            index=False,
-        )
+        df.to_sql('report_metadata', conn, if_exists='append', index=False)
         conn.close()
-        
         return metadata.report_id
     
-    def save_operations(
-        self, operations: List[OperationRecord]
-    ) -> int:
-        """Save operation records to database.
-        
-        Args:
-            operations: List of OperationRecord instances
-            
-        Returns:
-            Number of records saved
-        """
+    def save_operations(self, operations: List[OperationRecord]) -> int:
         if not operations:
             return 0
-        
         df = pd.DataFrame([op.to_dict() for op in operations])
-        
         conn = get_db_connection(self.config)
-        df.to_sql(
-            'operations',
-            conn,
-            if_exists='append',
-            index=False,
-        )
+        df.to_sql('operations', conn, if_exists='append', index=False)
         conn.close()
-        
         return len(operations)
     
-    def save_drilling_fluid(
-        self, fluid_records: List[DrillingFluidRecord]
-    ) -> int:
-        """Save drilling fluid records to database.
-        
-        Args:
-            fluid_records: List of DrillingFluidRecord instances
-            
-        Returns:
-            Number of records saved
-        """
+    def save_drilling_fluid(self, fluid_records: List[DrillingFluidRecord]) -> int:
         if not fluid_records:
             return 0
-        
         df = pd.DataFrame([rec.to_dict() for rec in fluid_records])
-        
         conn = get_db_connection(self.config)
-        df.to_sql(
-            'drilling_fluid',
-            conn,
-            if_exists='append',
-            index=False,
-        )
+        df.to_sql('drilling_fluid', conn, if_exists='append', index=False)
         conn.close()
-        
         return len(fluid_records)
     
-    def save_gas_readings(
-        self, gas_readings: List[GasReadingRecord]
-    ) -> int:
-        """Save gas reading records to database.
-        
-        Args:
-            gas_readings: List of GasReadingRecord instances
-            
-        Returns:
-            Number of records saved
-        """
+    def save_gas_readings(self, gas_readings: List[GasReadingRecord]) -> int:
         if not gas_readings:
             return 0
-        
         df = pd.DataFrame([rec.to_dict() for rec in gas_readings])
-        
         conn = get_db_connection(self.config)
-        df.to_sql(
-            'gas_readings',
-            conn,
-            if_exists='append',
-            index=False,
-        )
+        df.to_sql('gas_readings', conn, if_exists='append', index=False)
         conn.close()
-        
         return len(gas_readings)
     
-    def save_dataframe(
-        self,
-        df: pd.DataFrame,
-        table_name: str,
-        if_exists: str = 'append'
-    ) -> int:
-        """Save a DataFrame directly to database.
-        
-        Args:
-            df: DataFrame to save
-            table_name: Name of the table
-            if_exists: How to behave if table exists ('fail', 'replace', 'append')
-            
-        Returns:
-            Number of rows saved
-        """
+    def save_dataframe(self, df: pd.DataFrame, table_name: str, if_exists: str = 'append') -> int:
         conn = get_db_connection(self.config)
-        df.to_sql(
-            table_name,
-            conn,
-            if_exists=if_exists,
-            index=False,
-        )
+        df.to_sql(table_name, conn, if_exists=if_exists, index=False)
         conn.close()
-        
         return len(df)
     
     def get_report_by_id(self, report_id: str) -> Optional[Dict]:
-        """Get report metadata by ID.
-        
-        Args:
-            report_id: Report ID
-            
-        Returns:
-            Dictionary with report data or None
-        """
         conn = get_db_connection(self.config)
-        df = pd.read_sql_query(
-            "SELECT * FROM report_metadata WHERE report_id = ?",
-            conn,
-            params=(report_id,)
-        )
+        df = pd.read_sql_query("SELECT * FROM report_metadata WHERE report_id = ?", conn, params=(report_id,))
         conn.close()
-        
         if len(df) == 0:
             return None
-        
         return df.iloc[0].to_dict()
     
     def get_operations_by_report(self, report_id: str) -> pd.DataFrame:
-        """Get all operations for a report.
-        
-        Args:
-            report_id: Report ID
-            
-        Returns:
-            DataFrame with operations
-        """
         conn = get_db_connection(self.config)
-        df = pd.read_sql_query(
-            "SELECT * FROM operations WHERE report_id = ? ORDER BY start_time",
-            conn,
-            params=(report_id,)
-        )
+        df = pd.read_sql_query("SELECT * FROM operations WHERE report_id = ? ORDER BY start_time", conn, params=(report_id,))
         conn.close()
-        
         return df
     
     def get_drilling_fluid_by_report(self, report_id: str) -> pd.DataFrame:
-        """Get drilling fluid data for a report.
-        
-        Args:
-            report_id: Report ID
-            
-        Returns:
-            DataFrame with drilling fluid data
-        """
         conn = get_db_connection(self.config)
-        df = pd.read_sql_query(
-            "SELECT * FROM drilling_fluid WHERE report_id = ?",
-            conn,
-            params=(report_id,)
-        )
+        df = pd.read_sql_query("SELECT * FROM drilling_fluid WHERE report_id = ?", conn, params=(report_id,))
         conn.close()
-        
         return df
     
     def get_gas_readings_by_report(self, report_id: str) -> pd.DataFrame:
-        """Get gas readings for a report.
-        
-        Args:
-            report_id: Report ID
-            
-        Returns:
-            DataFrame with gas readings
-        """
         conn = get_db_connection(self.config)
-        df = pd.read_sql_query(
-            "SELECT * FROM gas_readings WHERE report_id = ? ORDER BY depth_m",
-            conn,
-            params=(report_id,)
-        )
+        df = pd.read_sql_query("SELECT * FROM gas_readings WHERE report_id = ? ORDER BY depth_m", conn, params=(report_id,))
         conn.close()
-        
         return df
     
     def get_all_reports(self) -> pd.DataFrame:
-        """Get all reports metadata.
-        
-        Returns:
-            DataFrame with all reports
-        """
         conn = get_db_connection(self.config)
-        df = pd.read_sql_query(
-            "SELECT * FROM report_metadata ORDER BY report_creation_time DESC",
-            conn
-        )
+        df = pd.read_sql_query("SELECT * FROM report_metadata ORDER BY report_creation_time DESC", conn)
         conn.close()
-        
         return df
     
     def delete_report(self, report_id: str) -> bool:
-        """Delete a report and all related data.
-        
-        Args:
-            report_id: Report ID
-            
-        Returns:
-            True if deleted, False if not found
-        """
         conn = get_db_connection(self.config)
         cursor = conn.cursor()
-        
-        # Check if report exists
-        cursor.execute(
-            "SELECT COUNT(*) FROM report_metadata WHERE report_id = ?",
-            (report_id,)
-        )
-        count = cursor.fetchone()[0]
-        
-        if count == 0:
+        cursor.execute("SELECT COUNT(*) FROM report_metadata WHERE report_id = ?", (report_id,))
+        if cursor.fetchone()[0] == 0:
             cursor.close()
             conn.close()
             return False
-        
-        # Delete report (cascades to related tables)
-        cursor.execute(
-            "DELETE FROM report_metadata WHERE report_id = ?",
-            (report_id,)
-        )
-        
+        cursor.execute("DELETE FROM report_metadata WHERE report_id = ?", (report_id,))
         conn.commit()
         cursor.close()
         conn.close()
-        
         return True
     
     def query(self, sql: str, params: Optional[tuple] = None) -> pd.DataFrame:
-        """Execute a custom SQL query.
-        
-        Args:
-            sql: SQL query
-            params: Query parameters
-            
-        Returns:
-            DataFrame with results
-        """
         conn = get_db_connection(self.config)
         df = pd.read_sql_query(sql, conn, params=params)
         conn.close()
-        
         return df

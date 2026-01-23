@@ -3,9 +3,9 @@ import io
 import base64
 from PIL import Image
 from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from ddr_assistant.prompts.chat_prompts import SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT
-from ddr_assistant.tools.db_tools import query_drilling_db, get_db_schema, list_tables
+from ddr_assistant.tools.db_tools import query_drilling_db, get_db_schema
 from ddr_assistant.utils.guardrails import GuardrailManager
 
 class LlamaAgent:
@@ -23,7 +23,6 @@ class LlamaAgent:
         self.tools = {
             "query_drilling_db": query_drilling_db,
             "get_db_schema": get_db_schema,
-            "list_tables": list_tables
         }
         self.llm_with_tools = self.llm.bind_tools(list(self.tools.values()))
         self.messages = []
@@ -74,8 +73,11 @@ class LlamaAgent:
         self.add_message("user", user_message)
         
         try:
-
-            active_messages = [SystemMessage(content=SYSTEM_PROMPT)] + [HumanMessage(content=user_message)]
+            history_text = "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in self.messages[:-1]])
+            history_snippet = history_text[-1000:] if len(history_text) > 1000 else history_text
+            
+            full_system_prompt = f"{SYSTEM_PROMPT}\n\n[Recent History Context]\n...{history_snippet}"
+            active_messages = [SystemMessage(content=full_system_prompt), HumanMessage(content=user_message)]
 
             for _ in range(5):
                 response = self.llm_with_tools.invoke(active_messages)

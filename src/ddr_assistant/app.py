@@ -43,7 +43,7 @@ def initialize_data():
         progress_bar.progress((current + 1) / total)
 
     status, message = batch_processor.initialize_data(update_progress)
-    
+
     status_text.empty()
     progress_bar.empty()
     
@@ -64,8 +64,7 @@ with st.sidebar:
 
     st.divider()
     st.markdown("Database Status")
-    # initialize_data()
-    # st.rerun()
+    initialize_data()
 
     st.divider()
     st.markdown("Image Analysis")

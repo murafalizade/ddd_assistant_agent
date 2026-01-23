@@ -26,19 +26,6 @@ def query_drilling_db(query: str) -> str:
         return f"Error executing query: {str(e)} {query}"
 
 @tool
-def list_tables() -> str:
-    """
-    List available tables in the drilling database. 
-    Use this if you need to know what types of data are available (e.g., fluid, gas, operations).
-    """
-    return """
-1. **report_metadata**: Core metadata for each daily report. Contains high-level info like rig name, operator, date (report_period), well depth, and overall summaries.
-2. **operations**: Time-log of activities. Use this for questions about "what happened at 10:00" or "how long did drilling take".
-3. **drilling_fluid**: Technical parameters of the drilling mud (density, viscosity, etc.).
-4. **gas_readings**: Detailed gas chromatography data (C1-C5) and total gas levels at specific depths.
-"""
-
-@tool
 def get_db_schema() -> str:
     """
     Get the exact column names for tables in the drilling database.

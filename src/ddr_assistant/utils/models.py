@@ -1,70 +1,42 @@
-"""Data models for DDR reports."""
-
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 import uuid
 
-
 @dataclass
 class ReportMetadata:
-    """Metadata for a DDR (Daily Drilling Report).
-    
-    This represents the common information at the top of each report.
-    """
-    
-    # Unique identifier for this report
     report_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    
-    # Report information
     status: Optional[str] = None
     report_creation_time: Optional[str] = None
     report_number: Optional[str] = None
     days_ahead_behind: Optional[str] = None
-    
-    # Operator and rig information
     operator: Optional[str] = None
     rig_name: Optional[str] = None
     drilling_contractor: Optional[str] = None
-    
-    # Well information
     spud_date: Optional[str] = None
     wellbore_type: Optional[str] = None
     wellbore_name: Optional[str] = None
     date_well_complete: Optional[str] = None
     report_period: Optional[str] = None
-    
-    # Summary information
     summary_activities: Optional[str] = None
     planned_activities: Optional[str] = None
-    
-    # File information
     file_name: Optional[str] = None
-    
-    # Measurements
     elevation_rkb_msl_m: Optional[float] = None
     water_depth_msl_m: Optional[float] = None
     dist_drilled_m: Optional[float] = None
     penetration_rate_m_h: Optional[float] = None
     hole_dia_in: Optional[float] = None
-    
-    # Pressure and formation
     pressure_test_type: Optional[str] = None
     formation_strength_g_cm3: Optional[float] = None
     dia_last_casing: Optional[str] = None
-    
-    # Flags
     tight_well: Optional[str] = None
     hpht: Optional[str] = None
     temperature: Optional[str] = None
     pressure: Optional[str] = None
-    
-    # Timestamps
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for database insertion."""
         return {
             'report_id': self.report_id,
             'status': self.status,
@@ -98,28 +70,19 @@ class ReportMetadata:
             'updated_at': self.updated_at.isoformat(),
         }
 
-
 @dataclass
 class OperationRecord:
-    """Record of a single operation/activity."""
-    
-    # Foreign key to report
     report_id: str
-    
-    # Operation details
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     end_depth_mmd: Optional[float] = None
     main_sub_activity: Optional[str] = None
     state: Optional[str] = None
     remark: Optional[str] = None
-    
-    # Auto-generated ID
     operation_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = field(default_factory=datetime.now)
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for database insertion."""
         return {
             'operation_id': self.operation_id,
             'report_id': self.report_id,
@@ -132,25 +95,16 @@ class OperationRecord:
             'created_at': self.created_at.isoformat(),
         }
 
-
 @dataclass
 class DrillingFluidRecord:
-    """Record of drilling fluid measurements."""
-    
-    # Foreign key to report
     report_id: str
-    
-    # Drilling fluid properties
     parameter_name: Optional[str] = None
     value: Optional[str] = None
     unit: Optional[str] = None
-    
-    # Auto-generated ID
     fluid_record_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = field(default_factory=datetime.now)
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for database insertion."""
         return {
             'fluid_record_id': self.fluid_record_id,
             'report_id': self.report_id,
@@ -160,15 +114,9 @@ class DrillingFluidRecord:
             'created_at': self.created_at.isoformat(),
         }
 
-
 @dataclass
 class GasReadingRecord:
-    """Record of gas reading information."""
-    
-    # Foreign key to report
     report_id: str
-    
-    # Gas reading details
     depth_m: Optional[float] = None
     c1: Optional[float] = None
     c2: Optional[float] = None
@@ -181,13 +129,10 @@ class GasReadingRecord:
     trip_gas: Optional[float] = None
     background_gas: Optional[float] = None
     connection_gas: Optional[float] = None
-    
-    # Auto-generated ID
     gas_reading_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = field(default_factory=datetime.now)
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for database insertion."""
         return {
             'gas_reading_id': self.gas_reading_id,
             'report_id': self.report_id,
